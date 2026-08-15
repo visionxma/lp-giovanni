@@ -50,6 +50,17 @@ A página tem duas seções:
 
 O link do canal aparece no `index.html`, no `href` do botão com `data-cta="hero"`. Trocar o canal significa trocar essa URL.
 
+### Pixel & Link Manager
+
+O snippet do Pixel & Link Manager é o **primeiro script do `<head>`**, logo abaixo das metatags de charset e viewport e acima do GTM. Ele faz duas coisas:
+
+- carrega os pixels cadastrados no painel para o domínio em que a página estiver rodando;
+- intercepta o clique no botão do Telegram e manda para o rotacionador de grupos, registrando o clique.
+
+As URLs e a chave pública (anon) do snippet não devem ser alteradas.
+
+Para o rotacionador funcionar, o domínio precisa estar cadastrado na aba "Grupos" do painel exatamente como aparece na barra de endereço, sem `https://` e sem barra final. Enquanto isso não acontecer, o console mostra `Nenhum site encontrado` e o botão continua abrindo o link direto do Telegram — a página não quebra.
+
 ### Google Tag Manager
 
 O container `GTM-PNHFDG55` já está instalado: o script no `<head>` e o `<noscript>` logo após a abertura do `<body>`.
