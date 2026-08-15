@@ -42,7 +42,7 @@ A página tem duas seções:
 ### Tipografia e cores
 
 - **Bebas Neue** no título principal, **Inter** no restante (carregadas do Google Fonts).
-- Fundo `#0F1610`, destaques em laranja `#FF9F39`, botão em azul `#1446FF`, textos de apoio em `#B0B4B0` e `#A4A4A4`.
+- Fundo `#0F1610`, destaques e botão em verde `#9FE500` (hover `#8ACB00`, texto do botão `#0F1610`), textos de apoio em `#B0B4B0` e `#A4A4A4`.
 
 ## Configuração
 

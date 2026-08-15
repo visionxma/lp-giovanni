@@ -6,12 +6,13 @@
 
 :root {
   --bg:        #0F1610;
-  --orange:    #FF9F39;
+  --green:     #9FE500;
+  --green-dark:#8ACB00;
   --white:     #FFFFFF;
   --gray-text: #B0B4B0;
   --gray-legal:#A4A4A4;
-  --blue:      #1446FF;
-  --blue-text: #EBEEF2;
+  --cta:       #9FE500;
+  --cta-text:  #0F1610;
   --container: 1140px;
 }
 
@@ -36,7 +37,7 @@ p { margin: 0; }
 h1 { margin: 0; font-weight: 400; }
 a { color: inherit; }
 
-:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -101,7 +102,7 @@ a { color: inherit; }
   font-size: 40px;
   font-weight: 600;
   line-height: 1.2em;
-  color: var(--orange);
+  color: var(--green);
 }
 .kicker-2 { font-size: 38px; }
 
@@ -131,10 +132,10 @@ a { color: inherit; }
   max-width: 440px;
   margin-top: 30px;
   padding: 20px 40px;
-  background-color: var(--blue);
-  border: 1px solid var(--blue);
+  background-color: var(--cta);
+  border: 1px solid var(--cta);
   border-radius: 12px;
-  color: var(--blue-text);
+  color: var(--cta-text);
   font-family: inherit;
   font-size: 24px;
   font-weight: 700;
@@ -143,16 +144,20 @@ a { color: inherit; }
   text-transform: uppercase;
   text-decoration: none;
   text-wrap: balance;
-  box-shadow: 0 0 21px -6px var(--blue);
+  box-shadow: 0 0 21px -6px var(--cta);
   animation: pisca 1.5s infinite;
-  transition: color .2s ease, background-color .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease;
 }
 .btn:hover,
-.btn:focus { color: #000000; }
+.btn:focus {
+  background-color: var(--green-dark);
+  border-color: var(--green-dark);
+  color: #000000;
+}
 
 @keyframes pisca {
-  0%, 100% { box-shadow: 0 0 21px -6px var(--blue); }
-  50%      { box-shadow: 0 0 34px 2px rgba(20, 70, 255, .55); }
+  0%, 100% { box-shadow: 0 0 21px -6px var(--cta); }
+  50%      { box-shadow: 0 0 34px 2px rgba(159, 229, 0, .55); }
 }
 
 .micro {
