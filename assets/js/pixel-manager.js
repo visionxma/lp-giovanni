@@ -1,0 +1,204 @@
+/* Pixel & Link Manager — snippet compartilhado por todas as rotas da LP.
+   Não alterar as URLs nem a chave pública (anon). */
+(function(){
+  var SUPABASE_URL = 'https://tcwpfgfddxajlewhmwjr.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjd3BmZ2ZkZHhhamxld2htd2pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTA1MDQsImV4cCI6MjA4ODU4NjUwNH0.j-i0-iYeFqgVNs-oBS4LTiLW6lJYBL7lwRqxBbXChNc';
+  var EDGE_FUNCTION_URL = 'https://fxmsbynbgwlwtekxqmak.supabase.co/functions/v1';
+  var hostname = window.location.hostname;
+  var pathname = window.location.pathname.replace(/\/$/, '');
+  var fullDomain = hostname + pathname;
+  var headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  var domainFilter = 'or=(domain.eq.' + encodeURIComponent(hostname) + ',domain.eq.' + encodeURIComponent(fullDomain) + ')';
+
+  console.log('[PixelManager] Hostname:', hostname, '| Full:', fullDomain);
+
+  // --- Pixels ---
+  fetch(SUPABASE_URL + '/rest/v1/pixels?active=eq.true&' + domainFilter + '&select=platform,pixel_id,domain', { headers: headers })
+  .then(function(r){ return r.json(); })
+  .then(function(allPixels){
+    var exact = allPixels.filter(function(p){ return p.domain === fullDomain; });
+    var pixels = exact.length > 0 ? exact : allPixels.filter(function(p){ return p.domain === hostname; });
+    console.log('[PixelManager] Pixels encontrados:', pixels.length, '(total:', allPixels.length, ')');
+    pixels.forEach(function(p){
+      switch(p.platform){
+        case 'facebook':
+          !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+          n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+          (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', p.pixel_id); fbq('track', 'PageView');
+          break;
+        case 'google_analytics':
+          var gs=document.createElement('script');gs.async=true;
+          gs.src='https://www.googletagmanager.com/gtag/js?id='+p.pixel_id;
+          document.head.appendChild(gs);
+          window.dataLayer=window.dataLayer||[];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js',new Date());gtag('config',p.pixel_id);
+          break;
+        case 'google_tag_manager':
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;
+          j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+          f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',p.pixel_id);
+          break;
+        case 'tiktok':
+          !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+          ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
+          ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+          for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+          ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+          ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";
+          ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e+"_"+n]=1;
+          var o=document.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;
+          var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+          ttq.load(p.pixel_id);ttq.page();}(window,document,'ttq');
+          break;
+        case 'custom':
+          var cs=document.createElement('script');cs.async=true;
+          cs.src=p.pixel_id;document.head.appendChild(cs);
+          break;
+      }
+    });
+  })
+  .catch(function(err){ console.error('[PixelManager] Erro ao buscar pixels:', err); });
+
+  // --- WhatsApp/Telegram Link Interceptor ---
+  fetch(SUPABASE_URL + '/rest/v1/sites?active=eq.true&' + domainFilter + '&select=id,domain', { headers: headers })
+  .then(function(r){ return r.json(); })
+  .then(function(allSites){
+    console.log('[PixelManager] Sites encontrados:', allSites);
+    if(!allSites || !allSites.length){
+      console.warn('[PixelManager] Nenhum site encontrado para "' + hostname + '" ou "' + fullDomain + '".');
+      return;
+    }
+    var exactSites = allSites.filter(function(s){ return s.domain === fullDomain; });
+    var sites = exactSites.length > 0 ? exactSites : allSites.filter(function(s){ return s.domain === hostname; });
+    if(!sites.length) return;
+    var siteId = sites[0].id;
+    console.log('[PixelManager] Site ID:', siteId);
+    var redirectBase = EDGE_FUNCTION_URL + '/whatsapp-redirect?siteId=' + siteId;
+
+    function isAppStoreLink(href){
+      if(!href) return false;
+      return href.indexOf('play.google.com') !== -1 ||
+             href.indexOf('apps.apple.com') !== -1 ||
+             href.indexOf('itunes.apple.com') !== -1;
+    }
+
+    function isGroupLink(href){
+      if(!href) return false;
+      if(isAppStoreLink(href)) return false;
+      return href.indexOf('wa.me') !== -1 ||
+             href.indexOf('api.whatsapp.com') !== -1 ||
+             href.indexOf('whatsapp.com') !== -1 ||
+             href.indexOf('chat.whatsapp.com') !== -1 ||
+             href.indexOf('t.me') !== -1 ||
+             href.indexOf('telegram.me') !== -1 ||
+             href.indexOf('whatsapp://') !== -1;
+    }
+
+    function getGroupUrl(el){
+      var href = el.getAttribute('href') || el.getAttribute('data-href') || '';
+      if(isGroupLink(href)) return href;
+      var onclick = el.getAttribute('onclick') || '';
+      var match = onclick.match(/(https?:\/\/(?:wa\.me|api\.whatsapp\.com|whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)[^"'\s)]*)/i);
+      if(match) return match[1];
+      var parent = el.closest('a[href]');
+      if(parent && isGroupLink(parent.getAttribute('href'))) return parent.getAttribute('href');
+      return null;
+    }
+
+    function pmRedirect(url){
+      var redirectUrl = redirectBase + '&original=' + encodeURIComponent(url) + '&page=' + encodeURIComponent(window.location.href);
+      console.log('[PixelManager] Interceptado dinamicamente:', url);
+      window.__pmOriginalOpen.call(window, redirectUrl, '_blank', 'noopener');
+    }
+
+    window.__pmOriginalOpen = window.open;
+    window.open = function(url){
+      if(url && typeof url === 'string' && isGroupLink(url)){
+        pmRedirect(url);
+        return null;
+      }
+      return window.__pmOriginalOpen.apply(window, arguments);
+    };
+
+    var pmLocDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+    if(!pmLocDescriptor || !pmLocDescriptor.set){
+      try {
+        var origLocation = window.location;
+        Object.defineProperty(window.__proto__, '__pmLocationHref', {
+          set: function(val){
+            if(val && typeof val === 'string' && isGroupLink(val)){
+              pmRedirect(val);
+              return;
+            }
+            origLocation.href = val;
+          },
+          configurable: true
+        });
+      } catch(e){}
+    }
+
+    if(typeof window.navigation !== 'undefined' && window.navigation.addEventListener){
+      window.navigation.addEventListener('navigate', function(ev){
+        var dest = ev.destination && ev.destination.url;
+        if(dest && isGroupLink(dest)){
+          ev.preventDefault();
+          pmRedirect(dest);
+        }
+      });
+    }
+
+    document.addEventListener('click', function(e){
+      var el = e.target.closest('button, [onclick], [role="button"]');
+      if(!el || el.__pmWaDynamic) return;
+      var onclick = el.getAttribute('onclick') || '';
+      if(onclick.match(/whatsapp|grupo|forcarEntrada|chat\.whatsapp/i)){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        el.__pmWaDynamic = true;
+        console.log('[PixelManager] Botão dinâmico interceptado:', el.tagName);
+        var redirectUrl = redirectBase + '&page=' + encodeURIComponent(window.location.href);
+        window.__pmOriginalOpen.call(window, redirectUrl, '_blank', 'noopener');
+      }
+    }, true);
+
+    function interceptLinks(){
+      var allElements = document.querySelectorAll('a[href], button, [onclick], [data-href], [role="button"], [role="link"]');
+      var intercepted = 0;
+      allElements.forEach(function(el){
+        if(el.__pmWaIntercepted) return;
+        var groupUrl = getGroupUrl(el);
+        if(!groupUrl) return;
+        el.__pmWaIntercepted = true;
+        intercepted++;
+        console.log('[PixelManager] Elemento interceptado:', el.tagName, groupUrl);
+        el.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          var redirectUrl = redirectBase + '&original=' + encodeURIComponent(groupUrl) + '&page=' + encodeURIComponent(window.location.href);
+          console.log('[PixelManager] Redirecionando para:', redirectUrl);
+          window.__pmOriginalOpen.call(window, redirectUrl, '_blank', 'noopener');
+          return false;
+        }, true);
+      });
+      if(intercepted > 0) console.log('[PixelManager] Total interceptados:', intercepted);
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', interceptLinks);
+    } else {
+      interceptLinks();
+    }
+
+    if(typeof MutationObserver !== 'undefined'){
+      var observer = new MutationObserver(function(){ interceptLinks(); });
+      observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    }
+  })
+  .catch(function(err){ console.error('[PixelManager] Erro ao buscar sites:', err); });
+})();
