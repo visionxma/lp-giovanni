@@ -1,6 +1,6 @@
 # LP Giovanni
 
-Landing pages estáticas para captação de membros do Giovanni. São quatro páginas com o mesmo layout, cada uma com seu próprio CTA e seu próprio caminho, para que pixel, tráfego e conversão sejam medidos separadamente.
+Landing pages estáticas para captação de membros do Giovanni. São quatro páginas com o mesmo layout, cada uma com seu próprio CTA e seu próprio caminho, para que o tráfego e a conversão de cada destino sejam medidos separadamente.
 
 ## Stack
 
@@ -14,7 +14,6 @@ canal/index.html           rota /canal/ — CTA do canal no Telegram
 bot/index.html             rota /bot/ — CTA do bot no Telegram
 x1/index.html              rota /x1/ — CTA do grupo X1 no WhatsApp
 assets/css/style.css       estilos, desktop-first (compartilhado por todas as rotas)
-assets/js/pixel-manager.js snippet do Pixel & Link Manager (compartilhado)
 assets/js/main.js          envio do clique do CTA para o dataLayer
 assets/fotos/              50 fotos do ensaio
 ```
@@ -28,7 +27,7 @@ assets/fotos/              50 fotos do ensaio
 | `/bot/` | Bot no Telegram | `bot` | `img_0612.jpg` |
 | `/x1/` | Grupo X1 no WhatsApp | `x1` | `img_0630.jpg` |
 
-A raiz continua sendo a página do canal, como já era, para não quebrar as campanhas que já apontam para o domínio sem caminho. A `/canal/` leva ao mesmo grupo, mas em um caminho próprio — assim dá para cadastrar pixel e rotacionador só para ela.
+A raiz continua sendo a página do canal, como já era, para não quebrar as campanhas que já apontam para o domínio sem caminho. A `/canal/` leva ao mesmo grupo, mas em um caminho próprio — assim dá para separar o tráfego dela no GTM.
 
 Cada rota é uma pasta com `index.html`, então qualquer hospedagem estática serve `/canal/`, `/bot/` e `/x1/` sem configuração de rewrite.
 
@@ -73,16 +72,7 @@ Cada página tem um único botão, com `data-cta="hero"` e `data-destino` identi
 
 No `href` do WhatsApp os `&` ficam escritos como `&amp;`, que é a forma correta em HTML — o navegador envia a URL normal.
 
-### Pixel & Link Manager
-
-O snippet do Pixel & Link Manager vive em `assets/js/pixel-manager.js` e é carregado como o **primeiro script do `<head>`** de cada rota, logo abaixo das metatags de charset e viewport e acima do GTM. A tag não tem `async` nem `defer`, então o comportamento é o mesmo de quando o código estava colado inline. Ele faz duas coisas:
-
-- carrega os pixels cadastrados no painel para o domínio em que a página estiver rodando;
-- intercepta o clique no botão do Telegram e manda para o rotacionador de grupos, registrando o clique.
-
-As URLs e a chave pública (anon) do snippet não devem ser alteradas.
-
-Para o rotacionador funcionar, o domínio precisa estar cadastrado na aba "Grupos" do painel exatamente como aparece na barra de endereço, sem `https://` e sem barra final. Como o snippet casa tanto pelo domínio sozinho quanto pelo domínio + caminho, dá para cadastrar `seudominio.com/x1` e `seudominio.com/bot` como entradas separadas — o cadastro mais específico ganha do genérico. Enquanto isso não acontecer, o console mostra `Nenhum site encontrado` e o botão continua abrindo o link direto do Telegram — a página não quebra.
+Os links são fixos no HTML e o botão abre o destino direto, sem redirecionador no meio. Não há rotacionador de grupos: para trocar um destino, edite o `href` e publique.
 
 ### Google Tag Manager
 
